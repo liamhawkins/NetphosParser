@@ -1,2 +1,76 @@
 # NetphosParser
 Parse NetPhos 3.1 results and filter against phospho-peptides
+
+# Usage
+#### Create Instance
+
+```
+npp = NetphosParser()
+```
+
+#### Parse NetPhos 3.1 gff results:
+
+```
+npp.parse('netphos_results.txt')
+```
+
+Example NetPhos 3.1 gff results format:
+```
+##Type Protein A0A161I596
+##Protein A0A161I596
+##MAKPLTDQEKRKQISIRGIVGVENVAELKKGFNRHLHFTLVKDRNVATTRDYYFALAHTV
+##RDHLVGRWIRTQQYYYEKDPKRTYYLSLEFYMGRTLQNTMINLGLQNACDEAIYQIGLDI
+##EELEEMEEDAGLGNGGLGRLAACFLDSMATLGLAAYGYGIRYEYGIFNQKIKDGWQVEEA
+##DDWLRHGNPWEKDRPEYMLPIHFYGRVEHHKTGVRWVDTQVVLAMPYDTPVPGYMNNTVN
+##TMRLWSARAPNDFNLQDFNVGDYIEAVLDRNLAENISRVLYPNDNFFEGKELRLKQEYFV
+##VAASLQDIIRRFKASGLGFKDRIRTGFDSFPEKVAIQLNDTHPALGIPELMRIFLDIEKL
+##PWEKAWEITKKTFAYTNHTVLPEALERWPVDLVEKLLPRHLAIIYEINQRHLDRIAALYP
+##KDLDRARRMSLIEEDGIKRINMAHLCIVGSHAVNGVAKIHSDIVKNQVFKDFNDMEPDKF
+##QNKTNGITPRRWLLLCNPGLAELIAEKIGETYVKDLSQLTKLKKFVDDDVFIRDVSKVKE
+##ENKLKFIQYLEKEYKMKLNPASMFDVHVKRIHEYKRQLLNCLHIITMYNRIRENPTKEFV
+##PRTVIIGGKAAPGYHMAKMIIKVITAVGDIVNNDPLVGNKLKVIYLENYRVSLAEKVIPA
+##TDLSEQISTAGTEASGTGNMKFMLNGALTIGTMDGANVEMAEEAGEENLFIFGMRVEEVA
+##EMDKKGYNARDYYEKLPELKKAMDQIQNGFFSPTKPDLFKDIVNMLFNYDRFKVFADYEA
+##YVKSQEKVSALYKNPKEWTKVVIKNIAASGMFSSDRTIKEYARDIWGVEPTDLKIAPPNE
+##PRNVVDVKAAAPAAKG                                            
+##end-Protein
+# seqname            source        feature      start   end   score  N/A   ?
+# ---------------------------------------------------------------------------
+A0A161I596           netphos-3.1b  phos-CKII        6     6   0.551  . .  YES
+A0A161I596           netphos-3.1b  phos-unsp       15    15   0.981  . .  YES
+...
+```
+
+#### Read in phospho-peptides of interest and filter out NetPhos results that don't match any peptide
+
+```
+peptides = pd.read_csv('peptides.csv')
+npp.filter(peptides)
+```
+
+Headers must be `[uniprot,peptide]` with `#` indicating phosphorylation of previous residue.
+
+Example peptide format:
+
+```
+uniprot,peptide
+A0A2G9S9U7,SSS#VGS#SSSVTASPAGR
+Q98TT3,SS#IHNFMTHPEFR
+Q98TT3,S#SIHNFMTHPEFR
+A0A2G9S9U7,SS#S#VGSSSSVTASPAGR
+A0A2G9RFA9,LSENMSQLT#QDLGTAFFQK
+A0A2G9SAQ8,IGS#LDNITHTPGGGTK
+```
+
+#### Output filtered results to pandas dataframe
+```
+npp.to_df()
+```
+
+Example output:
+
+```
+	uniprot	        residue	      residue_index	  context	        kinase	        matched_peptides
+0	A0A2G9NAP1	T	      24	          PSPATQDTQPVGSEG	phos-ATM	REESPMDVDQPSPATQDT#QPVGSEGPQAAEK
+1	A0A2G9NAP1	S	      121	          KDEPPPLSPAPLTPA	phos-cdk5	ESQLAHIKDEPPPLS#PAPLTPATPSSLDPFFSR
+```
