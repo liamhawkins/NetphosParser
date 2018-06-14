@@ -44,11 +44,11 @@ class NetphosParser:
                 return s[:find]+repl+s[find + len(sub):]
             return s
         
-        def matches_peptide(hit, peptides):
+        def matches_peptide(hit, peptides, orig_peptides):
             pad_peptides = []
             hit.matched_peptides = []
-            for peptide in peptides:
-                orig_peptide = peptide
+            for index,peptide in enumerate(peptides):
+                unmod_peptide = peptide
                 pept_residue_index = peptide.index('#')-1
                 residue = peptide[pept_residue_index]
                 if residue != hit.residue:
@@ -66,7 +66,8 @@ class NetphosParser:
                     pad_peptide = pad_peptide+'?'*(len(hit.context)-len(pad_peptide))
                 
                 if fnmatch.fnmatch(pad_peptide, hit.context):
-                    hit.matched_peptides.append(orig_peptide)
+                    hit.matched_peptides.append(unmod_peptide)
+                    hit.orig_peptide = orig_peptides[peptides.index(unmod_peptide)]
                 
                 pad_peptides.append(pad_peptide)
             
@@ -94,11 +95,12 @@ class NetphosParser:
         
         del_records = []
         for index, record in enumerate(self.records):
-            matching_peptides = df[df['uniprot'] == record.id]['peptide'].values
+            matching_peptides = df[df['uniprot'] == record.id]['peptide'].values.tolist()
+            orig_peptides = df[df['uniprot'] == record.id]['orig_peptide'].values.tolist()
             del_hits = []
             
             for h_index, hit in enumerate(record.hits):
-                if not matches_peptide(hit, matching_peptides):
+                if not matches_peptide(hit, matching_peptides, orig_peptides):
                     del_hits.append(h_index)
             for i in sorted(del_hits, reverse=True):
                 del record.hits[i]
@@ -108,11 +110,11 @@ class NetphosParser:
             del self.records[i]
             
     def to_df(self):
-        df = pd.DataFrame(columns=['uniprot', 'residue', 'residue_index', 'context', 'kinase', 'matched_peptides'])
+        df = pd.DataFrame(columns=['uniprot', 'orig_peptide', 'residue', 'residue_index', 'context', 'kinase', 'matching_peptides', 'score'])
         i=0
         for record in self.records:
             for hit in record.hits:
-                df.loc[i] = [record.id, hit.residue, hit.site_index, hit.context, hit.kinase, '; '.join(hit.matched_peptides)]
+                df.loc[i] = [record.id, hit.orig_peptide, hit.residue, hit.site_index, hit.context, hit.kinase, '; '.join(hit.matched_peptides), hit.score]
                 i+=1
         return df
                 
